@@ -1,17 +1,40 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Button, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { FIREBASE_AUTH } from './FirebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const auth = FIREBASE_AUTH;
 
-  const handleLogin = () => {
-    Alert.alert('Login Success', 'Successfully logged in!');
+  const handleLogin = async () => {
+    setLoading(true);
+    try{ 
+      const response = await signInWithEmailAndPassword(auth, email, password);
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+    }
+    finally{
+    setLoading(false);
+    }
   };
 
-  const handleSignup = () => {
-    Alert.alert('Signup', 'Signup');
+  const handleSignup = async () => {
+    setLoading(true);
+    try{ 
+      const response = await createUserWithEmailAndPassword(auth, email, password);
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+    }
+    finally{
+    setLoading(false);
+    }
   };
 
   return (
@@ -23,9 +46,8 @@ export default function Login() {
         <Text style={styles.inputLabel}>E-mail</Text>
         <TextInput
           style={styles.input}
-          placeholder="fuki.sipic@example.com"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => setEmail(text)}
           keyboardType="email-address"
           autoCapitalize="none"
         />
@@ -34,20 +56,28 @@ export default function Login() {
         <Text style={styles.inputLabel}>Password</Text>
         <TextInput
           style={styles.input}
-          placeholder="●●●●●●●●●●"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => setPassword(text)}
           secureTextEntry
         />
+        {loading ? (
+          <ActivityIndicator size="large" color="#0000ff" />
+        ) : (
+            <View >
+              <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                <Text style={styles.buttonText}>Sign in</Text>
+              </TouchableOpacity>
+              <Text style={styles.signupText}>Don't have an account?</Text>
+              <TouchableOpacity
+                style={styles.signupButton}
+                onPress={handleSignup}
+              >
+                <Text style={styles.signupButtonText}>Sign up</Text>
+              </TouchableOpacity>
+              <StatusBar style="auto" />
+            </View>
+        )}
       </View>
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Sign in</Text>
-      </TouchableOpacity>
-      <Text style={styles.signupText}>Don't have an account?</Text>
-      <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-        <Text style={styles.signupButtonText}>Sign up</Text>
-      </TouchableOpacity>
-      <StatusBar style="auto" />
     </View>
   );
 }
@@ -58,6 +88,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   logo: {
     marginBottom: 40,
@@ -74,11 +105,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
   inputContainer: {
-    width: '100%',
+    width: '75%',
     marginBottom: 15,
   },
   inputLabel: {
-    alignSelf: 'stretch',
+    alignSelf: 'flex-start',
     marginLeft: 5,
     marginBottom: 0,
     color: '#36A4F4'
@@ -87,11 +118,13 @@ const styles = StyleSheet.create({
     height: 40,
     borderWidth: 2,
     padding: 10,
-    borderRadius: 10, // Making borders round
-  },
+    borderRadius: 10,
+    width: '100%', // Percentage width relative to the inputContainer
+    alignSelf: 'flex-start' // Centers the input field within the inputContainer
+  }, 
   button: {
     marginTop: 20,
-    width: '80%',
+    width: '100%',
     backgroundColor: '#007bff', // Bootstrap primary button color
     padding: 10,
     borderRadius: 10, // Making button corners round like input fields
@@ -103,13 +136,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
   signupText:{
+    textAlign: "center",
     marginTop: 100,
     color: 'grey'
   },
   signupButton:{
     backgroundColor: '#F2F2F2',
     marginTop: 10,
-    width: '80%',
+    width: '100%',
     borderColor: '#007bff', // Blue border color
     borderWidth: 1,
     padding: 10,
