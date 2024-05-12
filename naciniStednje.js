@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const Carousel = () => {
+  const navigation =  useNavigation();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const items = [
     require('./assets/0-sum.png'), // Replace with the path to your image file
@@ -25,24 +27,26 @@ const Carousel = () => {
   const handleSelect = () => {
     // Do something with the selected item, like navigate to another screen
     console.log('Selected item:', items[selectedIndex]);
+    navigation.navigate("Dashboard");
+    
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.carouselContainer}>
         <TouchableOpacity onPress={handlePrev} style={styles.arrowButton}>
-          <Text style={styles.arrowText}>{'<'}</Text>
+          <Text style={styles.arrowText}>{'❮ '}</Text>
         </TouchableOpacity>
         <View style={styles.imageContainer}>
           <Image source={items[selectedIndex]} style={styles.image} />
         </View>
         <TouchableOpacity onPress={handleNext} style={styles.arrowButton}>
-          <Text style={styles.arrowText}>{'>'}</Text>
+          <Text style={styles.arrowText}>{'❯'}</Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.text}>{texts[selectedIndex]}</Text>
       <TouchableOpacity onPress={handleSelect} style={styles.selectButton}>
-        <Text>Select</Text>
+        <Text style={styles.selectText}>Odaberi</Text>
       </TouchableOpacity>
     </View>
   );
@@ -59,16 +63,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: '20%',
+    marginBottom: '15%',
   },
   arrowButton: {
-    paddingHorizontal: '3%',
+    paddingHorizontal: '1%',
   },
   arrowText: {
-    fontSize: 20,
+    fontSize: 35,
+    fontWeight: 'bold',
   },
   imageContainer: {
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: 'grey',
     padding: '5%',
     marginHorizontal: '5%',
@@ -82,13 +87,21 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   text: {
-    marginBottom: '10%',
-    marginHorizontal: '10%' // Style for the text
+    marginBottom: '15%',
+    marginHorizontal: '5%', // Style for the text
+    fontSize: 20,
+    textAlign: 'center',
+  },
+  selectText: {
+    color: 'white',
+    fontSize: 20,
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
   selectButton: {
     backgroundColor: '#36A4F4',
     paddingVertical: '4%',
-    paddingHorizontal: '7%',
+    paddingHorizontal: '10%',
     borderRadius: 15,
   },
 });

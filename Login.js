@@ -4,18 +4,22 @@ import { StatusBar } from 'expo-status-bar';
 import { FIREBASE_AUTH } from './FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const auth = FIREBASE_AUTH;
+  const navigation = useNavigation();
 
   const handleLogin = async () => {
     setLoading(true);
     try{ 
       const response = await signInWithEmailAndPassword(auth, email, password);
       console.log(response);
+      navigation.navigate("Carousel");
+
     } catch (error) {
       console.log(error);
     }
@@ -27,8 +31,8 @@ export default function Login() {
   const handleSignup = async () => {
     setLoading(true);
     try{ 
-      const response = await createUserWithEmailAndPassword(auth, email, password);
-      console.log(response);
+      navigation.navigate("Register");
+
     } catch (error) {
       console.log(error);
     }
