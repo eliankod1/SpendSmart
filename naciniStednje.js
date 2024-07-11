@@ -1,47 +1,72 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from "react";
+import { View, TouchableOpacity, Text, Image, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { FIREBASE_DB, FIREBASE_AUTH } from "./FirebaseConfig";
+import { doc, updateDoc } from "firebase/firestore";
 
 const Carousel = () => {
-  const navigation =  useNavigation();
+  const navigation = useNavigation();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const items = [
-    require('./assets/0-sum.png'), // Replace with the path to your image file
-    require('./assets/50-30-20.png'), // Replace with the path to your image file
-    require('./assets/envelope.png'), // Replace with the path to your image file
+    require("./assets/0-sum.png"),
+    require("./assets/50-30-20.png"),
   ];
   const texts = [
-    "Cilj ovog načina štednje je da kada se oduzme mjesečni prihod od mjesečnog rashoda ostane 0. Potiče detaljno planiranje proračuna i prioritiziranje troškova tokom mjeseca.", // Text corresponding to the first image
-    "50% prihoda alocira se za osnovne potrebe, stanarinu i slično, 30% alocira se za zabavu i slobodno trošenje dok se 20% prihoda alocira u štednju. ", // Text corresponding to the second image
-    "Prihod se raspoređuje u virtualne omotnice prema različitim kategorijama troškova, poput hrane, režija, zabave i slično kako bi se povećala kontrola nad troškovima.", // Text corresponding to the third image
+    "Cilj ovog načina štednje je da kada se oduzme mjesečni prihod od mjesečnog rashoda ostane 0. Potiče detaljno planiranje proračuna i prioritiziranje troškova tokom mjeseca.",
+    "50% prihoda alocira se za osnovne potrebe, stanarinu i slično, 30% alocira se za zabavu i slobodno trošenje dok se 20% prihoda alocira u štednju. ",
   ];
 
   const handlePrev = () => {
-    setSelectedIndex((prevIndex) => (prevIndex === 0 ? items.length - 1 : prevIndex - 1));
+    setSelectedIndex((prevIndex) =>
+      prevIndex === 0 ? items.length - 1 : prevIndex - 1
+    );
   };
 
   const handleNext = () => {
-    setSelectedIndex((prevIndex) => (prevIndex === items.length - 1 ? 0 : prevIndex + 1));
+    setSelectedIndex((prevIndex) =>
+      prevIndex === items.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
-  const handleSelect = () => {
-    // Do something with the selected item, like navigate to another screen
-    console.log('Selected item:', items[selectedIndex]);
-    navigation.navigate("Dashboard");
-    
+  const handleSelect = async () => {
+    const user = FIREBASE_AUTH.currentUser;
+    if (user) {
+      const userDocRef = doc(FIREBASE_DB, "users", user.uid);
+      let savingsMethod;
+      switch (selectedIndex) {
+        case 0:
+          savingsMethod = "ZeroBased";
+          break;
+        case 1:
+          savingsMethod = "50_30_20";
+          break;
+        default:
+          savingsMethod = "";
+      }
+      await updateDoc(userDocRef, {
+        savingsMethod: savingsMethod,
+      });
+      navigation.navigate("Dashboard");
+    }
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.goBackButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.goBackButtonText}>{"<"}</Text>
+      </TouchableOpacity>
       <View style={styles.carouselContainer}>
         <TouchableOpacity onPress={handlePrev} style={styles.arrowButton}>
-          <Text style={styles.arrowText}>{'❮ '}</Text>
+          <Text style={styles.arrowText}>{"❮ "}</Text>
         </TouchableOpacity>
         <View style={styles.imageContainer}>
           <Image source={items[selectedIndex]} style={styles.image} />
         </View>
         <TouchableOpacity onPress={handleNext} style={styles.arrowButton}>
-          <Text style={styles.arrowText}>{'❯'}</Text>
+          <Text style={styles.arrowText}>{"❯"}</Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.text}>{texts[selectedIndex]}</Text>
@@ -55,54 +80,68 @@ const Carousel = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '5%',
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "5%",
   },
   carouselContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '15%',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: "15%",
   },
   arrowButton: {
-    paddingHorizontal: '1%',
+    paddingHorizontal: "1%",
   },
   arrowText: {
     fontSize: 35,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   imageContainer: {
     borderWidth: 3,
-    borderColor: 'grey',
-    padding: '5%',
-    marginHorizontal: '5%',
+    borderColor: "grey",
+    padding: "5%",
+    marginHorizontal: "5%",
     flex: 1,
     borderRadius: 20,
-    aspectRatio: 1, // Aspect ratio of 1:1
+    aspectRatio: 1,
   },
   image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   text: {
-    marginBottom: '15%',
-    marginHorizontal: '5%', // Style for the text
+    marginBottom: "15%",
+    marginHorizontal: "5%",
     fontSize: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   selectText: {
-    color: 'white',
+    color: "white",
     fontSize: 20,
-    textAlign: 'center',
-    fontWeight: 'bold',
+    textAlign: "center",
+    fontWeight: "bold",
   },
   selectButton: {
-    backgroundColor: '#36A4F4',
-    paddingVertical: '4%',
-    paddingHorizontal: '10%',
+    backgroundColor: "#36A4F4",
+    paddingVertical: "4%",
+    paddingHorizontal: "10%",
     borderRadius: 15,
+  },
+  goBackButton: {
+    paddingHorizontal: "5%",
+    paddingVertical: "30%",
+    position: "absolute",
+    top: 40,
+    left: 25,
+    padding: 10,
+    zIndex: 10,
+  },
+  goBackButtonText: {
+    fontSize: 35,
+    color: "black",
+    fontWeight: "bold",
   },
 });
 

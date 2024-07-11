@@ -4,34 +4,55 @@ import {
   Text,
   View,
   TextInput,
-  Button,
-  Alert,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { FIREBASE_AUTH } from "./FirebaseConfig";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { FIREBASE_AUTH, FIREBASE_DB } from "./FirebaseConfig";
+import {
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+} from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
+import { setDoc, doc } from "firebase/firestore";
+import spendsmartLogo from "./assets/spendsmart_logo_1.png";
 
-export default function Login() {
+export default function Register() {
   const [_name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const auth = FIREBASE_AUTH;
   const navigation = useNavigation();
+
   const handleSignup = async () => {
     setLoading(true);
+    setErrorMessage("");
     try {
-      const response = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      console.log(response);
-      navigation.navigate("Login");
+      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+      if (signInMethods.length > 0) {
+
+        setErrorMessage("Email adresa je već u uporabi. Molimo upotrijebite drugu.");
+      } else {
+        const response = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const user = response.user;
+        await setDoc(doc(FIREBASE_DB, "users", user.uid), {
+          uid: user.uid,
+          name: _name,
+          email: user.email,
+          savingsMethod: null,
+        });
+        console.log(response);
+        navigation.navigate("Login");
+      }
     } catch (error) {
+      setErrorMessage("Dogodila se pogreška. Molim te pokušaj ponovno.");
       console.log(error);
     } finally {
       setLoading(false);
@@ -40,11 +61,9 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.logo}>
-        <Text style={styles.logoText}>LOGO</Text>
-      </View>
+      <Image source={spendsmartLogo} style={styles.logo} />
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Name</Text>
+        <Text style={styles.inputLabel}>Ime</Text>
         <TextInput
           style={styles.input}
           value={_name}
@@ -63,26 +82,29 @@ export default function Login() {
         />
       </View>
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Password</Text>
+        <Text style={styles.inputLabel}>Lozinka</Text>
         <TextInput
           style={styles.input}
           value={password}
           onChangeText={(text) => setPassword(text)}
           secureTextEntry
         />
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" />
         ) : (
           <View>
             <TouchableOpacity style={styles.button} onPress={handleSignup}>
-              <Text style={styles.buttonText}>Sign up</Text>
+              <Text style={styles.buttonText}>Registracija</Text>
             </TouchableOpacity>
-            <Text style={styles.signupText}>Already have an account?</Text>
+            <Text style={styles.signupText}>Već imate račun?</Text>
             <TouchableOpacity
               style={styles.signupButton}
               onPress={() => navigation.navigate("Login")}
             >
-              <Text style={styles.signupButtonText}>Sign in</Text>
+              <Text style={styles.signupButtonText}>Prijava</Text>
             </TouchableOpacity>
             <StatusBar style="auto" />
           </View>
@@ -102,17 +124,12 @@ const styles = StyleSheet.create({
   },
   logo: {
     marginBottom: 40,
-    backgroundColor: "#A4a4a4", // Grey background
-    width: 150, // Diameter of the circle
-    height: 150, // Diameter of the circle
-    borderRadius: 100, // Half the diameter to make it a perfect circle
-    justifyContent: "center", // Center the text vertically
-    alignItems: "center", // Center the text horizontally
-  },
-  logoText: {
-    color: "#000", // White text color
-    fontSize: 30, // Adjust the size as needed
-    fontWeight: "bold",
+    backgroundColor: "#A4a4a4",
+    width: 150,
+    height: 150,
+    borderRadius: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
   inputContainer: {
     width: "75%",
@@ -129,15 +146,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     padding: 10,
     borderRadius: 10,
-    width: "100%", // Percentage width relative to the inputContainer
-    alignSelf: "flex-start", // Centers the input field within the inputContainer
+    width: "100%",
+    alignSelf: "flex-start",
   },
   button: {
     marginTop: 20,
     width: "100%",
-    backgroundColor: "#007bff", // Bootstrap primary button color
+    backgroundColor: "#007bff",
     padding: 10,
-    borderRadius: 10, // Making button corners round like input fields
+    borderRadius: 10,
     alignItems: "center",
   },
   buttonText: {
@@ -154,7 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F2F2F2",
     marginTop: 10,
     width: "100%",
-    borderColor: "#007bff", // Blue border color
+    borderColor: "#1793f9",
     borderWidth: 1,
     padding: 10,
     borderRadius: 10,
@@ -164,5 +181,9 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 20,
     fontWeight: "bold",
+  },
+  errorText: {
+    color: "red",
+    marginTop: 10,
   },
 });

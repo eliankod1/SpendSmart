@@ -1,51 +1,65 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { FIREBASE_AUTH } from './FirebaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { FIREBASE_AUTH, FIREBASE_DB } from "./FirebaseConfig";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { useNavigation } from "@react-navigation/native";
+import spendsmartLogo from "./assets/spendsmart_logo_1.png";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const auth = FIREBASE_AUTH;
   const navigation = useNavigation();
 
   const handleLogin = async () => {
     setLoading(true);
-    try{ 
+    setErrorMessage("");
+    try {
       const response = await signInWithEmailAndPassword(auth, email, password);
-      console.log(response);
-      navigation.navigate("Carousel");
-
+      const user = response.user;
+      const userDoc = await getDoc(doc(FIREBASE_DB, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.savingsMethod) {
+          navigation.navigate("Dashboard");
+        } else {
+          navigation.navigate("Carousel");
+        }
+      }
     } catch (error) {
+      setErrorMessage("Nevažeći email ili lozinka. Molim te pokušaj ponovno.");
       console.log(error);
-    }
-    finally{
-    setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignup = async () => {
     setLoading(true);
-    try{ 
+    try {
       navigation.navigate("Register");
-
     } catch (error) {
       console.log(error);
-    }
-    finally{
-    setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.logo}>
-        <Text style={styles.logoText}>LOGO</Text>
-      </View>
+      <Image source={spendsmartLogo} style={styles.logo} />
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>E-mail</Text>
         <TextInput
@@ -57,29 +71,32 @@ export default function Login() {
         />
       </View>
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Password</Text>
+        <Text style={styles.inputLabel}>Lozinka</Text>
         <TextInput
           style={styles.input}
           value={password}
           onChangeText={(text) => setPassword(text)}
           secureTextEntry
         />
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" />
         ) : (
-            <View >
-              <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Sign in</Text>
-              </TouchableOpacity>
-              <Text style={styles.signupText}>Don't have an account?</Text>
-              <TouchableOpacity
-                style={styles.signupButton}
-                onPress={handleSignup}
-              >
-                <Text style={styles.signupButtonText}>Sign up</Text>
-              </TouchableOpacity>
-              <StatusBar style="auto" />
-            </View>
+          <View>
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Prijava</Text>
+            </TouchableOpacity>
+            <Text style={styles.signupText}>Nemate račun?</Text>
+            <TouchableOpacity
+              style={styles.signupButton}
+              onPress={handleSignup}
+            >
+              <Text style={styles.signupButtonText}>Registracija</Text>
+            </TouchableOpacity>
+            <StatusBar style="auto" />
+          </View>
         )}
       </View>
     </View>
@@ -89,74 +106,73 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
   },
   logo: {
     marginBottom: 40,
-    backgroundColor: '#A4a4a4', // Grey background
-    width: 150, // Diameter of the circle
-    height: 150, // Diameter of the circle
-    borderRadius: 100, // Half the diameter to make it a perfect circle
-    justifyContent: 'center', // Center the text vertically
-    alignItems: 'center', // Center the text horizontally
-  },
-  logoText: {
-    color: '#000', // White text color
-    fontSize: 30, // Adjust the size as needed
-    fontWeight: 'bold'
+    backgroundColor: "#A4a4a4",
+    width: 150,
+    height: 150,
+    borderRadius: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
   inputContainer: {
-    width: '75%',
+    width: "75%",
     marginBottom: 15,
   },
   inputLabel: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginLeft: 5,
     marginBottom: 0,
-    color: '#36A4F4'
+    color: "#36A4F4",
   },
   input: {
     height: 40,
     borderWidth: 2,
     padding: 10,
     borderRadius: 10,
-    width: '100%', // Percentage width relative to the inputContainer
-    alignSelf: 'flex-start' // Centers the input field within the inputContainer
-  }, 
+    width: "100%",
+    alignSelf: "flex-start",
+  },
+  errorText: {
+    color: "red",
+    marginTop: 10,
+  },
   button: {
     marginTop: 20,
-    width: '100%',
-    backgroundColor: '#007bff', // Bootstrap primary button color
+    width: "100%",
+    backgroundColor: "#007bff",
     padding: 10,
-    borderRadius: 10, // Making button corners round like input fields
-    alignItems: 'center',
+    borderRadius: 10,
+    alignItems: "center",
   },
   buttonText: {
-    color: '#ffffff',
+    color: "white",
     fontSize: 20,
-    fontWeight: 'bold'
+    fontWeight: "bold",
   },
-  signupText:{
+  signupText: {
     textAlign: "center",
     marginTop: 100,
-    color: 'grey'
+    color: "grey",
   },
-  signupButton:{
-    backgroundColor: '#F2F2F2',
+  signupButton: {
+    backgroundColor: "#F2F2F2",
     marginTop: 10,
-    width: '100%',
-    borderColor: '#007bff', // Blue border color
+    width: "100%",
+    borderColor: "#007bff",
     borderWidth: 1,
     padding: 10,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   signupButtonText: {
-    color: '#000',
+    color: "#000",
     fontSize: 20,
-    fontWeight: 'bold'
-  }
+    fontWeight: "bold",
+  },
 });
